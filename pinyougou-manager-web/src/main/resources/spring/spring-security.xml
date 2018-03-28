@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
+    <!--不拦截指定的请求-->
+    <http pattern="/*.html" security="none"></http>
+    <http pattern="/css/**" security="none"></http>
+    <http pattern="/img/**" security="none"></http>
+    <http pattern="/js/**" security="none"></http>
+    <http pattern="/plugins/**" security="none"></http>
+    <!--认证  和授权-->
+    <!--配置页面的拦截规则-->
+    <!--use-expressions：false,表示不使用SPEL表达式-->
+    <http use-expressions="false">
+        <!--表示拦截所有的请求--><!--SPEL-->
+        <intercept-url pattern="/**" access="ROLE_ADMIN"></intercept-url>
+        <!--使用表单登录的方式-->
+        <!--<http-basic></http-basic>-->
+        <form-login default-target-url="/admin/index.html" authentication-failure-forward-url="/login.html?error"
+                    login-page="/login.html" always-use-default-target="true"></form-login>
+        <!--关闭跨站请求伪造的安全机制-->
+        <csrf disabled="true"></csrf>
+
+        <!--设置同源的iframe也可以访问-->
+        <headers>
+            <frame-options policy="SAMEORIGIN"></frame-options>
+        </headers>
+        <!--/logout-->
+        <logout logout-success-url="/login.html"></logout>
+    </http>
+
+    <!--认证管理-->
+    <authentication-manager>
+        <authentication-provider>
+            <user-service>
+                <!--配置用户的名称和密码以及该用户的权限-->
+                <user name="admin" password="admin" authorities="ROLE_ADMIN"></user>
+            </user-service>
+        </authentication-provider>
+    </authentication-manager>
+
+</beans:beans>
