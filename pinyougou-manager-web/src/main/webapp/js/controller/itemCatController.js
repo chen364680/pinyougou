@@ -75,5 +75,39 @@ app.controller('itemCatController' ,function($scope,$controller   ,itemCatServic
 			}			
 		);
 	}
+
+	//**
+	//根据父节点的ID查询子节点列表
+	$scope.findByParentId=function (id) {
+		itemCatService.findByParentId(id).success(
+			function (response) {
+				$scope.list=response;
+            }
+		)
+    }
+
+    $scope.grade=1;//默认是当前是一级
+
+	$scope.setGrade=function (grade) {
+		$scope.grade=grade;
+    }
+    /**
+	 * 影响变量 entity_1 和entity_2
+     */
+    $scope.selectList = function (p_entity) {
+		if( $scope.grade==1){
+				$scope.entity_1=null;
+				$scope.entity_2=null;
+		}
+		if( $scope.grade==2){
+            $scope.entity_1=p_entity;
+            $scope.entity_2=null;
+		}
+		if( $scope.grade==3){
+            $scope.entity_2=p_entity;
+		}
+
+        $scope.findByParentId(p_entity.id);
+    }
     
 });	
