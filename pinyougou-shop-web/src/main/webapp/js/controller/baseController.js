@@ -54,5 +54,20 @@ app.controller('baseController' ,function($scope){
 		//console.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>"+str);
 		return str;
     }
-	
+
+    /**
+	 * [{"attributeName":"机身内存","attributeValue":["16G","32G"]}]
+     * @param list  [{"attributeName":"机身内存","attributeValue":["16G","32G"]}]
+     * @param key  attributeName
+     * @param keyValue 机身内存
+     */
+    $scope.searchObjectByKey=function (list,key,keyValue) {
+       for(var i=0;i<list.length;i++){
+       		var object = list[i];
+       		if(object[key]==keyValue){
+       			return object;
+			}
+	   }
+	   return null;
+    }
 });	
