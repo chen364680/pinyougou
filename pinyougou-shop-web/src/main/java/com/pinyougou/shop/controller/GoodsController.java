@@ -69,10 +69,20 @@ public class GoodsController {
 	 * @return
 	 */
 	@RequestMapping("/update")
-	public Result update(@RequestBody TbGoods goods){
+	public Result update(@RequestBody Goods goods){
 		try {
-			goodsService.update(goods);
-			return new Result(true, "修改成功");
+			//判断如果当前的用户 要更新的商品是他自己的放行  如果不是，返回错误
+			String sellerId = SecurityContextHolder.getContext().getAuthentication().getName();
+			Goods goods1 = goodsService.findOne(goods.getGoods().getId());
+			//数据库中的商品的用户
+			String sellerId1 = goods1.getGoods().getSellerId();
+			if(sellerId.equals(sellerId1)) {
+				goodsService.update(goods);
+				return new Result(true, "修改成功");
+			}else{
+				return new Result(false, "失败");
+			}
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new Result(false, "修改失败");
@@ -85,7 +95,7 @@ public class GoodsController {
 	 * @return
 	 */
 	@RequestMapping("/findOne")
-	public TbGoods findOne(Long id){
+	public Goods findOne(Long id){
 		return goodsService.findOne(id);		
 	}
 	
@@ -114,6 +124,8 @@ public class GoodsController {
 	 */
 	@RequestMapping("/search")
 	public PageResult search(@RequestBody TbGoods goods, int page, int rows  ){
+		String sellerId = SecurityContextHolder.getContext().getAuthentication().getName();
+		goods.setSellerId(sellerId);
 		return goodsService.findPage(goods, page, rows);		
 	}
 	

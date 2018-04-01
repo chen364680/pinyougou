@@ -15,6 +15,7 @@ import com.pinyougou.pojo.TbGoodsExample.Criteria;
 import com.pinyougou.sellergoods.service.GoodsService;
 
 import entity.PageResult;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 服务实现层
@@ -165,8 +166,105 @@ public class GoodsServiceImpl implements GoodsService {
 	 * 修改
 	 */
 	@Override
-	public void update(TbGoods goods){
-		goodsMapper.updateByPrimaryKey(goods);
+	public void update(Goods goods){
+
+		//1.更新spu
+		TbGoods tbGoods = goods.getGoods();
+		goodsMapper.updateByPrimaryKey(tbGoods);
+		//2.更新商品的描述
+		TbGoodsDesc goodsDesc = goods.getGoodsDesc();
+		System.out.println("desc的商品的ID"+goodsDesc.getGoodsId());
+		goodsDesc.setGoodsId(tbGoods.getId());
+		goodsDescMapper.updateByPrimaryKey(goodsDesc);
+		//3.更新SKU列表
+		//根据spu商品的ID查询该SPU的SKU的列表  删除
+		TbItemExample example = new TbItemExample();
+		example.createCriteria().andGoodsIdEqualTo(tbGoods.getId());// from tbitem where goodsid=1
+
+		itemMapper.deleteByExample(example);
+		//插入最新的SKU的列表（页面传递过来的）
+		List<TbItem> itemList = goods.getItemList();
+		if("1".equals(tbGoods.getIsEnableSpec())) {
+			for (TbItem item : itemList) {
+				//设置标题 spuname+" "+规格
+				String itemSpec = item.getSpec();
+				Map<String, Object> specObject = JSON.parseObject(itemSpec, Map.class);
+				String title = goods.getGoods().getGoodsName();
+				for (String key : specObject.keySet()) {
+					String specOptionName = (String) specObject.get(key);
+					title += " " + specOptionName;
+				}
+
+				item.setTitle(title);
+
+				//设置图片Wie一张
+
+				if (goods.getGoodsDesc().getItemImages() != null && goods.getGoodsDesc().getItemImages().length() > 0) {
+					String itemImages = goods.getGoodsDesc().getItemImages();
+					List<Map> images = JSON.parseArray(itemImages, Map.class);
+					item.setImage((String) images.get(0).get("url"));
+				}
+
+				//设置三级分类
+				item.setCategoryid(tbGoods.getCategory3Id());
+				TbItemCat itemCat = itemCatMapper.selectByPrimaryKey(tbGoods.getCategory3Id());
+				item.setCategory(itemCat.getName());//三级分类的名称
+
+				item.setCreateTime(new Date());
+				item.setUpdateTime(item.getCreateTime());
+
+
+				item.setGoodsId(tbGoods.getId());
+
+				item.setSellerId(tbGoods.getSellerId());
+				TbSeller seller = sellerMapper.selectByPrimaryKey(tbGoods.getSellerId());
+				item.setSeller(seller.getNickName());//店铺名称
+				TbBrand brand = brandMapper.selectByPrimaryKey(tbGoods.getBrandId());
+				item.setBrand(brand.getName());//品牌名称
+				//插入
+				itemMapper.insert(item);
+			}
+		}else{
+			//插入一个单品
+			TbItem item =new TbItem();
+
+			item.setSellerId(tbGoods.getSellerId());
+			TbSeller seller = sellerMapper.selectByPrimaryKey(tbGoods.getSellerId());
+			item.setSeller(seller.getNickName());//店铺名称
+
+			item.setTitle(tbGoods.getGoodsName());//SPU mingch
+
+			item.setPrice(tbGoods.getPrice());
+			item.setNum(9999);
+
+
+
+			if (goods.getGoodsDesc().getItemImages() != null && goods.getGoodsDesc().getItemImages().length() > 0) {
+				String itemImages = goods.getGoodsDesc().getItemImages();
+				List<Map> images = JSON.parseArray(itemImages, Map.class);
+				item.setImage((String) images.get(0).get("url"));
+			}
+
+			item.setCategoryid(tbGoods.getCategory3Id());
+			TbItemCat itemCat = itemCatMapper.selectByPrimaryKey(tbGoods.getCategory3Id());
+			item.setCategory(itemCat.getName());//三级分类的名称
+
+			item.setCreateTime(new Date());
+			item.setUpdateTime(item.getCreateTime());
+
+			item.setStatus("1");//启用
+			item.setIsDefault("1");
+			item.setGoodsId(tbGoods.getId());
+
+			TbBrand brand = brandMapper.selectByPrimaryKey(tbGoods.getBrandId());
+			item.setBrand(brand.getName());//品牌名称
+			item.setSpec("{}");
+
+			itemMapper.insert(item);
+
+		}
+
+
 	}	
 	
 	/**
@@ -175,8 +273,21 @@ public class GoodsServiceImpl implements GoodsService {
 	 * @return
 	 */
 	@Override
-	public TbGoods findOne(Long id){
-		return goodsMapper.selectByPrimaryKey(id);
+	public Goods findOne(Long id){
+		Goods goods = new Goods();
+		//1.查询商品的信息(spu)
+		TbGoods tbGoods = goodsMapper.selectByPrimaryKey(id);
+		goods.setGoods(tbGoods);
+		//2.查询商品的描述信息（goodsdesc）
+		TbGoodsDesc tbGoodsDesc = goodsDescMapper.selectByPrimaryKey(id);
+		goods.setGoodsDesc(tbGoodsDesc);
+		//3.查询商品的SKU列表
+		TbItemExample example = new TbItemExample();
+		example.createCriteria().andGoodsIdEqualTo(id);
+		List<TbItem> tbItems = itemMapper.selectByExample(example);
+		goods.setItemList(tbItems);
+
+		return goods;
 	}
 
 	/**
@@ -185,21 +296,29 @@ public class GoodsServiceImpl implements GoodsService {
 	@Override
 	public void delete(Long[] ids) {
 		for(Long id:ids){
-			goodsMapper.deleteByPrimaryKey(id);
+			//逻辑删除
+			TbGoods tbGoods = goodsMapper.selectByPrimaryKey(id);
+			tbGoods.setIsDelete("1");
+			goodsMapper.updateByPrimaryKey(tbGoods);
+//			goodsMapper.deleteByPrimaryKey(id);
 		}		
 	}
 	
-	
+
+//	@Transactional(rollbackFor = Exception.class,)//表示如果是exception异常就开启事务管理
 		@Override
 	public PageResult findPage(TbGoods goods, int pageNum, int pageSize) {
 		PageHelper.startPage(pageNum, pageSize);
 		
 		TbGoodsExample example=new TbGoodsExample();
 		Criteria criteria = example.createCriteria();
+
+		//查询的时候需要查询没有被删除的
+		criteria.andIsDeleteIsNull();// isdele is null
 		
 		if(goods!=null){			
 						if(goods.getSellerId()!=null && goods.getSellerId().length()>0){
-				criteria.andSellerIdLike("%"+goods.getSellerId()+"%");
+				criteria.andSellerIdEqualTo(goods.getSellerId());
 			}
 			if(goods.getGoodsName()!=null && goods.getGoodsName().length()>0){
 				criteria.andGoodsNameLike("%"+goods.getGoodsName()+"%");
@@ -228,5 +347,17 @@ public class GoodsServiceImpl implements GoodsService {
 		Page<TbGoods> page= (Page<TbGoods>)goodsMapper.selectByExample(example);		
 		return new PageResult(page.getTotal(), page.getResult());
 	}
-	
+
+    @Override
+    public void updateStatus(Long[] ids, String status) {
+		for (Long id : ids) {
+			//update tbgoods set stauts=1 where id in (ids)
+			//查询商品的数据 获取到了状态
+			TbGoods tbGoods = goodsMapper.selectByPrimaryKey(id);
+			//更新状态
+			tbGoods.setAuditStatus(status);
+			goodsMapper.updateByPrimaryKey(tbGoods);
+		}
+	}
+
 }
