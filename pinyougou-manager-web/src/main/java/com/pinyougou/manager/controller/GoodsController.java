@@ -1,7 +1,11 @@
 package com.pinyougou.manager.controller;
+import java.util.Arrays;
 import java.util.List;
 
+import com.pinyougou.pojo.TbItem;
 import com.pinyougou.pojogroup.Goods;
+import com.pinyougou.search.service.ItemSearchService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -93,6 +97,7 @@ public class GoodsController {
 	public Result delete(Long [] ids){
 		try {
 			goodsService.delete(ids);
+			itemSearchService.deleteByGoodsIds(Arrays.asList(ids));
 			return new Result(true, "删除成功"); 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -112,15 +117,28 @@ public class GoodsController {
 		return goodsService.findPage(goods, page, rows);		
 	}
 
+	@Reference
+	private ItemSearchService itemSearchService;
+
 	@RequestMapping("/updateStatus")
 	public Result updateStatus(Long[] ids ,String status){
 		try {
 			goodsService.updateStatus(ids,status);
+			//这里添加导入数据库的数据到索引库中
+			//1.查询被审核过的商品的数据   如果是 0 应该要将索引库的数据删除
+			if("1".equals(status)) {//要审核 才需要更新
+				List<TbItem> list = goodsService.findItemListByGoodsIdandStatus(ids, "1");
+				//2.将查询出来的商品的数据 导入到索引库中
+				itemSearchService.importItemListData(list);
+			}
 			return new Result(true, "审核成功");
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new Result(false, "审核失败");
 		}
 	}
+
+
+
 	
 }

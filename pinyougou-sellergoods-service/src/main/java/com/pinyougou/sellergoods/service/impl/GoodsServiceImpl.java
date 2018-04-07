@@ -1,4 +1,5 @@
 package com.pinyougou.sellergoods.service.impl;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -359,5 +360,23 @@ public class GoodsServiceImpl implements GoodsService {
 			goodsMapper.updateByPrimaryKey(tbGoods);
 		}
 	}
+
+	/**
+	 * 查询被更新的SKU的列表
+	 * @param ids
+	 * @param status
+	 * @return
+	 */
+    @Override
+    public List<TbItem> findItemListByGoodsIdandStatus(Long[] ids, String status) {
+
+		TbItemExample example  = new TbItemExample();
+		//select * from tb_item where goodsid=1 and status=1
+		TbItemExample.Criteria criteria = example.createCriteria();
+		criteria.andStatusEqualTo(status);
+		criteria.andGoodsIdIn(Arrays.asList(ids));
+		List<TbItem> tbItems = itemMapper.selectByExample(example);
+		return tbItems;
+    }
 
 }

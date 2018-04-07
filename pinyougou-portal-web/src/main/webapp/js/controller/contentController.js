@@ -24,5 +24,10 @@ app.controller('contentController',function ($scope,contentService) {
     //         }
     //     )
     // }
+    
+    $scope.search=function () {
+        //发送请求 搜索数据
+        window.location.href="http://localhost:9104/search.html#?keywords="+$scope.keywords;//文档一加载 立马发送请求 搜索数据展示。
+    }
 
 });

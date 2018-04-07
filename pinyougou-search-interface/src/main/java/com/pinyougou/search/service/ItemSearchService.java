@@ -1,5 +1,6 @@
 package com.pinyougou.search.service;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,4 +18,9 @@ public interface ItemSearchService {
      * @return
      */
     public Map search(Map searchMap);
+
+    //导入索引库数据
+    public void importItemListData(List itemList);
+
+    public void deleteByGoodsIds(List goodsIdList);
 }

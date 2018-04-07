@@ -3,8 +3,10 @@ package com.pinyougou.search.service.impl;
 import com.alibaba.dubbo.config.annotation.Service;
 import com.pinyougou.pojo.TbItem;
 import com.pinyougou.search.service.ItemSearchService;
+import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.solr.core.SolrTemplate;
 import org.springframework.data.solr.core.query.*;
@@ -54,6 +56,23 @@ public class ItemSearchServiceImpl implements ItemSearchService {
         return resultMap;
     }
 
+    @Override
+    public void importItemListData(List itemList) {
+            //更新索引库的数据
+            solrTemplate.saveBeans(itemList);//先删除 再新增
+            solrTemplate.commit();
+    }
+
+    @Override
+    public void deleteByGoodsIds(List goodsIdList) {
+        Query query = new SimpleQuery();
+        //根据查询的结果 将查询的结果删除
+        Criteria criteria = new Criteria("item_goodsid").in(goodsIdList);
+        query.addCriteria(criteria);
+        solrTemplate.delete(query);
+        solrTemplate.commit();
+    }
+
 
     /**
      * 根据查询的各种条件查询
@@ -65,10 +84,17 @@ public class ItemSearchServiceImpl implements ItemSearchService {
         //1.根据关键字搜索 添加条件
 
 
+        String keywords = (String) searchMap.get("keywords");
+        keywords = keywords.replace(" ", "");
+        System.out.println(">>>>前"+keywords);
+        keywords = keywords.replaceAll(" ", "");
+        System.out.println(">>>>后"+keywords);
+
+
         //2.设置高亮条件
         HighlightQuery highlightQuery = new SimpleHighlightQuery();
         Criteria criteria = new Criteria("item_keywords");
-        criteria.is(searchMap.get("keywords"));//keywords代表的是从页面传递过来的额主查询的文本
+        criteria.is(keywords);//keywords代表的是从页面传递过来的额主查询的文本
         highlightQuery.addCriteria(criteria);
 
 
@@ -117,6 +143,52 @@ public class ItemSearchServiceImpl implements ItemSearchService {
             }
         }
 
+        //2.5 添加价格的过滤条件  price
+        String price = (String)searchMap.get("price");//价格的区间的字符
+
+        if(!"".equals(price) && price!=null){
+            //item_price:[0 TO 20]
+            FilterQuery filterQuery = new SimpleFilterQuery();
+            Criteria pricecriteria = new Criteria("item_price");
+            String[] split = price.split("-");
+            //如果有* 语法是不支持的
+            if(!split[1].equals("*")) {
+                pricecriteria.between(split[0], split[1], true, true);
+            }else{
+                pricecriteria.greaterThanEqual(split[0]);
+            }
+
+            filterQuery.addCriteria(pricecriteria);
+            highlightQuery.addFilterQuery(filterQuery);
+        }
+
+        //2.6分页的过滤
+        Integer pageNo = (Integer) searchMap.get("pageNo");//当前的页码
+        Integer pageSize = (Integer) searchMap.get("pageSize");//没页显示的行 数
+        if(pageNo==null){
+            pageNo=1;
+        }
+        if(pageSize==null){
+            pageSize=20;
+        }
+        highlightQuery.setOffset((pageNo-1)*pageSize);//(page-1)*rows
+        highlightQuery.setRows(pageSize);//(rows)
+
+        //2.7价格的升序 和 降序  页面需要传递两个参数：1.要排序的域（Field） 2.要排序的类型（降序 和升序）
+        String sortField = (String) searchMap.get("sortField");//price /category
+        String sort = (String) searchMap.get("sort");//ASC DESC
+
+        if(sortField!=null &&!"".equals(sortField)){
+            Sort sort1=null;
+            if("ASC".equals(sort)){
+               sort1 = new Sort(Sort.Direction.ASC,"item_"+sortField);
+            }else{
+                sort1 = new Sort(Sort.Direction.DESC,"item_"+sortField);
+            }
+            highlightQuery.addSort(sort1);
+        }
+
+
 
 
         //查询
@@ -136,6 +208,7 @@ public class ItemSearchServiceImpl implements ItemSearchService {
 
         System.out.println("查询的总结果：》》》》"+hightPage.getTotalElements());
         result.put("rows",content);
+        result.put("totalPages",hightPage.getTotalPages()); //总页数
         result.put("total",hightPage.getTotalElements());
         return result;
     }
