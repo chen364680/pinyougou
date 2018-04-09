@@ -36,6 +36,8 @@ public class SolrUtil {
 
         example.createCriteria().andStatusEqualTo("1");//将正常的商品数据导入
 
+        //SPU  aut_stats=1 才导入
+
         List<TbItem> tbItems = tbItemMapper.selectByExample(example);
         for (TbItem tbItem : tbItems) {
             String spec = tbItem.getSpec();//string类型的规格与规格选项

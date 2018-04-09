@@ -92,6 +92,12 @@
             <artifactId>spring-security-web</artifactId>
         </dependency>
 
+        <!--freemarker的依赖-->
+        <dependency>
+            <groupId>org.freemarker</groupId>
+            <artifactId>freemarker</artifactId>
+        </dependency>
+
 
     </dependencies>
     <build>

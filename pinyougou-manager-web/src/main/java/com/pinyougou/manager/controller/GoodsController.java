@@ -2,6 +2,7 @@ package com.pinyougou.manager.controller;
 import java.util.Arrays;
 import java.util.List;
 
+import com.pinyougou.page.service.ItemPageService;
 import com.pinyougou.pojo.TbItem;
 import com.pinyougou.pojogroup.Goods;
 import com.pinyougou.search.service.ItemSearchService;
@@ -26,6 +27,10 @@ public class GoodsController {
 
 	@Reference
 	private GoodsService goodsService;
+
+	@Reference
+	private ItemPageService itemPageService;
+
 	
 	/**
 	 * 返回全部列表
@@ -130,6 +135,12 @@ public class GoodsController {
 				List<TbItem> list = goodsService.findItemListByGoodsIdandStatus(ids, "1");
 				//2.将查询出来的商品的数据 导入到索引库中
 				itemSearchService.importItemListData(list);
+				//3.调用商品的静态化服务 生成静态页面
+				for (Long id : ids) {
+					itemPageService.genItemHtml(id);
+				}
+
+
 			}
 			return new Result(true, "审核成功");
 		} catch (Exception e) {
@@ -138,7 +149,12 @@ public class GoodsController {
 		}
 	}
 
+	//测试方法（生成静态页面）
 
+	@RequestMapping("/genHtml")
+	public void generator(Long goodsId){
+			//调用生成静态页面的方法
+		itemPageService.genItemHtml(goodsId);
+	}
 
-	
 }
