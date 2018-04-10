@@ -9,10 +9,12 @@ import com.pinyougou.page.service.ItemPageService;
 import com.pinyougou.pojo.*;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
@@ -101,5 +103,23 @@ public class ItemPageServiceImpl implements ItemPageService {
                     }
                 }
         }
+    }
+
+    @Override
+    public boolean deleteHtml(Long[] goodsId) {
+
+        try {
+            for (Long id : goodsId) {
+                File file = new File(pageDir+id+".html");
+                if(file.exists()){
+                    file.delete();
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
     }
 }

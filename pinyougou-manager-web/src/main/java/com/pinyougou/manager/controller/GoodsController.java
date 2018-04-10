@@ -1,21 +1,27 @@
 package com.pinyougou.manager.controller;
-import java.util.Arrays;
-import java.util.List;
 
-import com.pinyougou.page.service.ItemPageService;
+import com.alibaba.dubbo.config.annotation.Reference;
+import com.alibaba.fastjson.JSON;
+import com.pinyougou.pojo.TbGoods;
 import com.pinyougou.pojo.TbItem;
 import com.pinyougou.pojogroup.Goods;
-import com.pinyougou.search.service.ItemSearchService;
+import com.pinyougou.sellergoods.service.GoodsService;
+import entity.PageResult;
+import entity.Result;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.core.MessageCreator;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.alibaba.dubbo.config.annotation.Reference;
-import com.pinyougou.pojo.TbGoods;
-import com.pinyougou.sellergoods.service.GoodsService;
 
-import entity.PageResult;
-import entity.Result;
+import javax.annotation.Resource;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.Session;
+import java.util.List;
+
 /**
  * controller
  * @author Administrator
@@ -28,8 +34,8 @@ public class GoodsController {
 	@Reference
 	private GoodsService goodsService;
 
-	@Reference
-	private ItemPageService itemPageService;
+//	@Reference
+//	private ItemPageService itemPageService;
 
 	
 	/**
@@ -102,7 +108,24 @@ public class GoodsController {
 	public Result delete(Long [] ids){
 		try {
 			goodsService.delete(ids);
-			itemSearchService.deleteByGoodsIds(Arrays.asList(ids));
+//			itemSearchService.deleteByGoodsIds(Arrays.asList(ids));
+//			发送消息 删除索引
+			jmsTemplate.send(queue_solr_delete, new MessageCreator() {
+				@Override
+				public Message createMessage(Session session) throws JMSException {
+					return session.createObjectMessage(ids);
+				}
+			});
+			//发送消息 删除静态页面
+
+			jmsTemplate.send(topic_delete_html, new MessageCreator() {
+				@Override
+				public Message createMessage(Session session) throws JMSException {
+					return session.createObjectMessage(ids);
+				}
+			});
+
+
 			return new Result(true, "删除成功"); 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -122,8 +145,23 @@ public class GoodsController {
 		return goodsService.findPage(goods, page, rows);		
 	}
 
-	@Reference
-	private ItemSearchService itemSearchService;
+//	@Reference
+//	private ItemSearchService itemSearchService;
+
+	@Autowired
+	private JmsTemplate jmsTemplate;
+
+	@Resource(name="queue_solr_update")
+	private Destination queue_solr_update;
+
+	@Resource(name="topic_gener_html")
+	private Destination topic_gener_html;
+	@Resource(name="queue_solr_delete")
+	private Destination queue_solr_delete;
+
+	@Resource(name="topic_delete_html")
+	private Destination topic_delete_html;
+
 
 	@RequestMapping("/updateStatus")
 	public Result updateStatus(Long[] ids ,String status){
@@ -134,11 +172,25 @@ public class GoodsController {
 			if("1".equals(status)) {//要审核 才需要更新
 				List<TbItem> list = goodsService.findItemListByGoodsIdandStatus(ids, "1");
 				//2.将查询出来的商品的数据 导入到索引库中
-				itemSearchService.importItemListData(list);
+//				itemSearchService.importItemListData(list);
+
+				jmsTemplate.send(queue_solr_update, new MessageCreator() {
+					@Override
+					public Message createMessage(Session session) throws JMSException {
+						return session.createTextMessage(JSON.toJSONString(list));
+					}
+				});
+
 				//3.调用商品的静态化服务 生成静态页面
-				for (Long id : ids) {
-					itemPageService.genItemHtml(id);
-				}
+//				for (Long id : ids) {
+//					itemPageService.genItemHtml(id);
+//				}
+				jmsTemplate.send(topic_gener_html, new MessageCreator() {
+					@Override
+					public Message createMessage(Session session) throws JMSException {
+						return session.createObjectMessage(ids);
+					}
+				});
 
 
 			}
@@ -151,10 +203,10 @@ public class GoodsController {
 
 	//测试方法（生成静态页面）
 
-	@RequestMapping("/genHtml")
-	public void generator(Long goodsId){
-			//调用生成静态页面的方法
-		itemPageService.genItemHtml(goodsId);
-	}
+//	@RequestMapping("/genHtml")
+//	public void generator(Long goodsId){
+//			//调用生成静态页面的方法
+//		itemPageService.genItemHtml(goodsId);
+//	}
 
 }

@@ -15,4 +15,5 @@ public interface ItemPageService {
      * @return
      */
     public boolean genItemHtml(Long goodsId);
+    public boolean deleteHtml(Long[] goodsId);
 }

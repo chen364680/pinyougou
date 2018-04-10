@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- 真正可以产生Connection的ConnectionFactory，由对应的 JMS服务厂商提供-->
+    <bean id="targetConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+        <property name="brokerURL" value="tcp://192.168.25.133:61616"/>
+    </bean>
+
+    <!-- Spring用于管理真正的ConnectionFactory的ConnectionFactory -->
+    <bean id="connectionFactory" class="org.springframework.jms.connection.SingleConnectionFactory">
+        <!-- 目标ConnectionFactory对应真实的可以产生JMS Connection的ConnectionFactory -->
+        <property name="targetConnectionFactory" ref="targetConnectionFactory"/>
+    </bean>
+
+
+    <!--生成静态页面-->
+    <bean id="topic_gener_html" class="org.apache.activemq.command.ActiveMQTopic">
+        <constructor-arg value="topic_gener_html"/>
+    </bean>
+
+    <!--删除静态页面-->
+    <bean id="topic_delete_html" class="org.apache.activemq.command.ActiveMQTopic">
+        <constructor-arg value="topic_delete_html"/>
+    </bean>
+
+
+    <!-- 生成静态页面 -->
+    <bean id="generHtmlListener" class="com.pinyougou.page.listener.GeneraterHtmlListener"></bean>
+    <bean class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <property name="connectionFactory" ref="connectionFactory"/>
+        <property name="destination" ref="topic_gener_html"/>
+        <property name="messageListener" ref="generHtmlListener"/>
+    </bean>
+
+
+
+    <!-- 删除静态页面 -->
+    <bean id="deleteHtmlListener" class="com.pinyougou.page.listener.DeleteHtmlListener"></bean>
+    <bean class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <property name="connectionFactory" ref="connectionFactory"/>
+        <property name="destination" ref="topic_delete_html"/>
+        <property name="messageListener" ref="deleteHtmlListener"/>
+    </bean>
+
+
+</beans>
