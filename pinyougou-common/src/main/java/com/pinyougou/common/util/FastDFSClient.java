@@ -15,6 +15,8 @@ public class FastDFSClient {
 	private StorageClient1 storageClient = null;
 	
 	public FastDFSClient(String conf) throws Exception {
+
+
 		if (conf.contains("classpath:")) {
 			conf = conf.replace("classpath:", this.getClass().getResource("/").getPath());
 		}
