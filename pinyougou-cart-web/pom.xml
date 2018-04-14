@@ -9,10 +9,10 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>pinyougou-user-web</artifactId>
+    <artifactId>pinyougou-cart-web</artifactId>
     <packaging>war</packaging>
 
-    <name>pinyougou-user-web Maven Webapp</name>
+    <name>pinyougou-cart-web Maven Webapp</name>
     <!-- FIXME change it to the project's website -->
     <url>http://www.example.com</url>
 
@@ -31,7 +31,7 @@
         </dependency>
         <dependency>
             <groupId>com.pinyougou</groupId>
-            <artifactId>pinyougou-user-interface</artifactId>
+            <artifactId>pinyougou-cart-interface</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
@@ -124,18 +124,17 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
     </dependencies>
 
     <build>
-        <finalName>pinyougou-user-web</finalName>
+        <finalName>pinyougou-cart-web</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.tomcat.maven</groupId>
                 <artifactId>tomcat7-maven-plugin</artifactId>
                 <configuration>
                     <path>/</path>
-                    <port>9106</port>
+                    <port>9107</port>
                  </configuration>
             </plugin>
         </plugins>
