@@ -1,16 +1,24 @@
-package com.pinyougou.sellergoods.service.impl;
-import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
+package com.pinyougou.order.service.impl;
+
 import com.alibaba.dubbo.config.annotation.Service;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.pinyougou.common.util.IdWorker;
+import com.pinyougou.mapper.TbOrderItemMapper;
 import com.pinyougou.mapper.TbOrderMapper;
+import com.pinyougou.order.service.OrderService;
 import com.pinyougou.pojo.TbOrder;
 import com.pinyougou.pojo.TbOrderExample;
 import com.pinyougou.pojo.TbOrderExample.Criteria;
-import com.pinyougou.sellergoods.service.OrderService;
-
+import com.pinyougou.pojo.TbOrderItem;
+import com.pinyougou.pojogroup.Cart;
 import entity.PageResult;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.List;
 
 /**
  * 服务实现层
@@ -41,12 +49,70 @@ public class OrderServiceImpl implements OrderService {
 		return new PageResult(page.getTotal(), page.getResult());
 	}
 
+
+	@Autowired
+	private IdWorker idWorker;
+	@Autowired
+	private RedisTemplate redisTemplate;
+	@Autowired
+	private TbOrderItemMapper orderItemMapper;
 	/**
 	 * 增加
 	 */
 	@Override
 	public void add(TbOrder order) {
-		orderMapper.insert(order);		
+		//生成全局唯一的订单的Id 通过雪花算法来实现.
+
+		//1.生成唯一的订单的ID
+
+
+		//2.从redis中将购物车列表数据获取到List<cart>  cart:sellerId
+		List<Cart> cartList = (List<Cart>) redisTemplate.boundHashOps("cartList").get(order.getUserId());
+		for (Cart cart : cartList) {
+			//3.构建订单对象
+			long orderId = idWorker.nextId();
+			//商家的ID
+			String sellerId = cart.getSellerId();
+			TbOrder tbOrder = new TbOrder();
+			tbOrder.setSourceType(order.getSourceType());
+			tbOrder.setUserId(order.getUserId());
+//			tbOrder.setPayment(order.getPayment());//所有的商家的总金额
+			double money =0.00d;
+			tbOrder.setReceiver(order.getReceiver());
+			tbOrder.setReceiverMobile(order.getReceiverMobile());
+			tbOrder.setReceiverAreaName(order.getReceiverAreaName());
+			tbOrder.setCreateTime(new Date());
+			tbOrder.setUpdateTime(tbOrder.getCreateTime());
+			tbOrder.setStatus("1");//1、未付款，2、已付款，3、未发货，4、已发货，5、交易成功，6、交易关闭,7、待评价
+			tbOrder.setPaymentType(order.getPaymentType());
+			tbOrder.setOrderId(orderId);
+			tbOrder.setPostFee("0");
+			tbOrder.setSellerId(sellerId);//订单只属于这个商家的
+
+
+			for(TbOrderItem orderItem :cart.getOrderItemList()){
+				money+= orderItem.getTotalFee().doubleValue();//每一个商品 （购买的数量*价格）
+				//添加订单的明细
+				orderItem.setOrderId(orderId);
+				long orderItemId = idWorker.nextId();
+				orderItem.setId(orderItemId);
+				orderItemMapper.insert(orderItem);
+
+			}
+
+			tbOrder.setPayment(new BigDecimal(money));
+
+			orderMapper.insert(tbOrder);
+
+			redisTemplate.boundHashOps("cartList").delete(order.getUserId());
+		}
+
+
+
+
+		//.保存订单
+//		orderMapper.insert(order);
+
 	}
 
 	

@@ -1,6 +1,6 @@
 
 
-app.controller('itemController',function($scope){
+app.controller('itemController',function($scope,$http){
 	
 	/**
 	 * 
@@ -74,6 +74,20 @@ app.controller('itemController',function($scope){
 		}
 		return true;		
 	}
+	
+	$scope.addGoodsToCartList=function () {
+		var itemId = $scope.sku.id;
+		var num = $scope.num;
+        $http.get('http://localhost:9107/cart/addGoodsToCartList.do?itemId='+itemId+"&num="+num,{'withCredentials':true}).success(
+        	function (response) {//reuslt
+				if(response.success){
+					window.location.href="http://localhost:9107/cart.html";
+				}else{
+					alert("添加失败");
+				}
+            }
+		);
+    }
 
 	
 })

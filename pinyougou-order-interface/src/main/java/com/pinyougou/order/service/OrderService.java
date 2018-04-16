@@ -1,20 +1,22 @@
-package com.pinyougou.sellergoods.service;
-import java.util.List;
-import com.pinyougou.pojo.TbOrderItem;
+package com.pinyougou.order.service;
 
+import com.pinyougou.pojo.TbOrder;
 import entity.PageResult;
+
+import java.util.List;
+
 /**
  * 服务层接口
  * @author Administrator
  *
  */
-public interface OrderItemService {
+public interface OrderService {
 
 	/**
 	 * 返回全部列表
 	 * @return
 	 */
-	public List<TbOrderItem> findAll();
+	public List<TbOrder> findAll();
 	
 	
 	/**
@@ -27,13 +29,13 @@ public interface OrderItemService {
 	/**
 	 * 增加
 	*/
-	public void add(TbOrderItem orderItem);
+	public void add(TbOrder order);
 	
 	
 	/**
 	 * 修改
 	 */
-	public void update(TbOrderItem orderItem);
+	public void update(TbOrder order);
 	
 
 	/**
@@ -41,7 +43,7 @@ public interface OrderItemService {
 	 * @param id
 	 * @return
 	 */
-	public TbOrderItem findOne(Long id);
+	public TbOrder findOne(Long id);
 	
 	
 	/**
@@ -56,6 +58,6 @@ public interface OrderItemService {
 	 * @param pageSize 每页记录数
 	 * @return
 	 */
-	public PageResult findPage(TbOrderItem orderItem, int pageNum, int pageSize);
+	public PageResult findPage(TbOrder order, int pageNum, int pageSize);
 	
 }

@@ -6,7 +6,7 @@
         http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
     <http pattern="/css/**" security="none"></http>
     <http pattern="/js/**" security="none"></http>
-    <http pattern="/image/**" security="none"></http>
+    <http pattern="/img/**" security="none"></http>
     <http pattern="/plugins/**" security="none"></http>
     <http pattern="/data/**" security="none"></http>
     <http pattern="/fonts/**" security="none"></http>

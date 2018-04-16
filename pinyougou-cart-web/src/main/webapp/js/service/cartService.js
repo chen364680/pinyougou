@@ -7,4 +7,13 @@ app.service('cartService',function($http){
     this.addGoodsToCartList=function (num,itemId) {
         return $http.get('/cart/addGoodsToCartList.do?num='+num+"&itemId="+itemId);
     }
+
+    this.findAdressList=function () {
+        return $http.get('/address/findAdressList.do')
+    }
+    
+    this.submitOrder=function (order) {
+        return $http.post('/order/add.do',order);
+        
+    }
 });

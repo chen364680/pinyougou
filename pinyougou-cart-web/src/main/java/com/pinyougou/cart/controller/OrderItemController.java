@@ -1,15 +1,16 @@
-package com.pinyougou.manager.controller;
-import java.util.List;
+package com.pinyougou.cart.controller;
 
+import com.alibaba.dubbo.config.annotation.Reference;
+import com.pinyougou.order.service.OrderItemService;
+import com.pinyougou.pojo.TbOrderItem;
+import entity.PageResult;
+import entity.Result;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.alibaba.dubbo.config.annotation.Reference;
-import com.pinyougou.pojo.TbOrderItem;
-import com.pinyougou.sellergoods.service.OrderItemService;
 
-import entity.PageResult;
-import entity.Result;
+import java.util.List;
+
 /**
  * controller
  * @author Administrator
