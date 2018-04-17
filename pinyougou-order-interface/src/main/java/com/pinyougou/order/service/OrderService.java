@@ -59,5 +59,16 @@ public interface OrderService {
 	 * @return
 	 */
 	public PageResult findPage(TbOrder order, int pageNum, int pageSize);
+
+	/**
+	 * 只是更新订单的状态
+	 * @param out_trade_no
+	 */
+	public void  updateOrderStatus(String out_trade_no);
+
+	//	更新支付日志表
+	public void  updatePayLogStatus(String out_trade_no,String transantionId);
+
+
 	
 }
