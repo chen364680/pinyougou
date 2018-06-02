@@ -115,4 +115,35 @@ public class WeixinPayServiceImpl implements WeixinPayService {
     public TbPayLog getPayLogFromRedis(String userId) {
         return (TbPayLog) redisTemplate.boundHashOps("payLog").get(userId);
     }
+
+
+    @Override
+    public Map closePay(String out_trade_no) {
+
+        //1.传递必要的参数列表  封装起来放在map中
+        Map param = new HashMap();
+        param.put("appid", appid);//公众号ID
+        param.put("mch_id", partner);//商家ID
+        param.put("nonce_str", WXPayUtil.generateNonceStr());//设置随机字符串
+        //设置签名 通过工具类产生一个有签名的XML
+        param.put("out_trade_no", out_trade_no);
+
+        try {
+            String xmlParam = WXPayUtil.generateSignedXml(param, partnerkey);
+            //3.发送请求
+            HttpClient httpClient = new HttpClient("https://api.mch.weixin.qq.com/pay/closeorder");
+            httpClient.setHttps(true);
+            httpClient.setXmlParam(xmlParam);//发送请求的时候携带的数据
+            httpClient.post();//发送post请求 并执行
+            //4.获取结果
+            String resultXml = httpClient.getContent();
+            Map<String, String> resultMap = WXPayUtil.xmlToMap(resultXml);
+            System.out.println(resultMap);
+            return resultMap;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashMap();
+        }
+
+    }
 }

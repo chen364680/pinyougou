@@ -25,4 +25,11 @@ public interface WeixinPayService {
     public Map queryStatus(String out_trade_no);
 
     public TbPayLog getPayLogFromRedis(String userId);
+
+    /**
+     * 关闭订单
+     * @param out_trade_no
+     * @return
+     */
+    public Map closePay(String out_trade_no);
 }
